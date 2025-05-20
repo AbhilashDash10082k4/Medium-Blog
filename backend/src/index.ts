@@ -14,6 +14,21 @@ export interface Env {
   DATABASE_URL: string;
 }
 
+app.use("/api/v1/blog/*", async (c, next) => {
+  const userToken = c.req.header("Authorization");
+  if (!userToken) {
+    c.status(401);
+    return c.json({ message: "Not Authorized" });
+  }
+  const token = userToken.split(" ")[1]; //["Bearer", "Token"]
+  const response = await verify(token, c.env.JWT_SECRET);
+  if(!response.id) {
+    c.status(401);
+    return c.json({msg: "Not authorized"});
+  }
+  next();
+})
+
 app.post("/api/v1/signup", async (c) => {
   try {
     const prisma = new PrismaClient({ datasourceUrl: c.env.DATABASE_URL }).$extends(withAccelerate())
@@ -37,15 +52,28 @@ app.post("/api/v1/signup", async (c) => {
     const secret = c.env.JWT_SECRET
     const token = await sign(payload, secret)
 
-    return c.json({jwt: token});
+    return c.json({ jwt: token });
   } catch (error) {
     console.log("Error: ", error);
-    return c.json({message: "Kuch toh gadbad hai!"})
+    return c.json({ message: "Kuch toh gadbad hai!" })
   }
 })
 
-app.post("/api/v1/signin", (c) => {
-  return c.text("token")
+app.post("/api/v1/signin", async (c) => {
+  const prisma = new PrismaClient({ datasourceUrl: c.env.DATABASE_URL }).$extends(withAccelerate());
+  const body = await c.req.json();
+  const user = await prisma.user.findUnique({
+    where: {
+      email: body.email,
+    }
+  })
+  if (!user) {
+    return c.json({ message: "You need to singup first!" })
+  }
+  const payload = { userId: user.id }
+  const token = sign(payload, c.env.JWT_SECRET);
+
+  return c.json({ jwt: token });
 })
 
 app.post("/api/v1/blog", (c) => {
