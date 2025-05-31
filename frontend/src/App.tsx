@@ -8,12 +8,13 @@ import Blog from './pages/Blog'
 function App() {
 
   return (
-    <div className='h-screen w-screen'>
+    <div className='min-h-screen w-full bg-zinc-900'>
       <BrowserRouter>
       <Routes>
         <Route path="/signin" element={<Signin/>}/>
         <Route path="/signup" element={<Signup/>}/>
-        <Route path="/blog/:id" element={<Blog/>}/>
+        {/* <Route path="/blogs/:id" element={<Blog/>}/> */}
+        <Route path="/blogs" element={<Blog/>}/>
       </Routes>
       </BrowserRouter>
     </div>
